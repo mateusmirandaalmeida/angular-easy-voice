@@ -11,6 +11,16 @@ bower install angular-easy-voice --save
 ```
 <script src="bower_components/angular-easy-voice/dist/EasyVoice.min.js"></script>
 ```
+
+## Add module
+```
+MODULE NAME: 'angular-easy-voice';
+
+angular.module('myApp', ['angular-easy-voice'])
+       .controller('myCtrl', function('$scope', EasyVoice){
+              console.log(EasyVoice);
+         });
+```
 ## Basic usage
 ```
 // The first parameter is the phrase that will turn on the voice command.

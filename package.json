@@ -1,8 +1,8 @@
 {
-  "name": "voice",
+  "name": "angular-easy-voice",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "prod": "NODE_ENV=production webpack -p --config ./webpack.production.config.js",
     "dev": "webpack-dev-server"

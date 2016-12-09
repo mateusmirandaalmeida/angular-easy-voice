@@ -14,7 +14,7 @@ export default function EasyVoice($window, $timeout){
         templateDOC;
 
     let template = `
-        <div style="position: absolute;left: 0;top: 0;width: 100%;height: 100%;background: #fff;text-align: center;"
+        <div style="position: absolute;left: 0;top: 0;width: 100%;height: 100%;background: #fff;text-align: center;z-index: 99999;"
           id="angular-easy-voice-container">
           <div style="margin-top: 10%;">
             <button class="blink" style="background: transparent;border: 1px solid #ccc;border-radius: 62%;padding: 30px;" id="angular-easy-voice-microphone">

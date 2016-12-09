@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html ng-app="app">
+  <head>
+    <title>Voice Command Example</title>
+    <meta charset="utf-8">
+    <base href="/"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body ng-controller="Ctrl">
+
+      <div ng-clock>
+
+          <h1>Example Angular Easy Voice.</h1>
+
+          <button ng-click="stop()">Parar</button>
+
+      </div>
+
+      <script type="text/javascript" src="node_modules/angular/angular.min.js"></script>
+
+      <script type="text/javascript">
+          angular.module('app', ['angular-easy-voice'])
+            .controller('Ctrl', function($scope, EasyVoice){
+
+              EasyVoice.addCommand('hello', function(){
+                  console.log('hello my friend!');
+              });
+
+              EasyVoice.initWatch('Ok Google', {
+                  lang: 'pt-BR',
+                  debug: false
+              }, function(resp){
+                  console.log(resp);
+              });
+
+              $scope.stop = function(){
+                  EasyVoice.stopWatch();
+              }
+
+            });
+      </script>
+
+      <script type="text/javascript" src="dist/EasyVoice.min.js"></script>
+
+  </body>
+</html>

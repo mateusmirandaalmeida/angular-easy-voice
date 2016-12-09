@@ -31,6 +31,10 @@ EasyVoice.initWatch('Ok Google', {
     console.log(resp);
 });
 ```
+## Stop
+```
+EasyVoice.stopWatch();
+```
 ## Example
 ```
 EasyVoice.addCommand('hello', function(){

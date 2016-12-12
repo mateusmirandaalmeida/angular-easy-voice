@@ -22,13 +22,24 @@
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
 
-              EasyVoice.addCommand('hello', function(){
-                  console.log('hello my friend!');
+              EasyVoice.reproduce('Hello my friend.')
+
+              //Command will be executed when the user phrase starts with "Search people"
+              EasyVoice.addCommandStartingWith('Search people', function(text){
+                  console.log(text) // Whole text
               });
 
+              // EasyVoice.addCommandStartingWith('Quanto é', function(text){
+              //     var str = text.split('Quanto é')[1];
+              //     if(str.indexOf('mais') != -1){
+              //        var n1 = parseInt(str.split('mais')[0].trim());
+              //        var n2 = parseInt(str.split('mais')[1].trim());
+              //        EasyVoice.reproduce('A soma dos números: '+(n1+n2));
+              //     }
+              // });
+
               EasyVoice.initWatch('Ok Google', {
-                  lang: 'pt-BR',
-                  debug: false
+                  lang: 'pt-BR'
               }, function(resp){
                   console.log(resp);
               });
@@ -40,7 +51,7 @@
             });
       </script>
 
-      <script type="text/javascript" src="dist/EasyVoice.min.js"></script>
+      <script type="text/javascript" src="EasyVoice.min.js"></script>
 
   </body>
 </html>

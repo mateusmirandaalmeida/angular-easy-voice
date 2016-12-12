@@ -25,7 +25,7 @@ angular.module('myApp', ['angular-easy-voice'])
 ```
 // The first parameter is the phrase that will turn on the voice command.
 EasyVoice.initWatch('Ok Google', {
-    lang: 'pt-BR', // language
+    lang: 'pt-BR', // language is optional, default: 'en-US'
     debug: false // Shows the user's speech
 }, function(resp){
     console.log(resp);
@@ -35,11 +35,24 @@ EasyVoice.initWatch('Ok Google', {
 ```
 EasyVoice.stopWatch();
 ```
-## Example
+## Example Simple Command
 ```
 EasyVoice.addCommand('hello', function(){
     console.log('hello my friend!');
 });
+```
+##Example Start-based command
+```
+//Command will be executed when the user phrase starts with "Search people"
+EasyVoice.addCommandStartingWith('Search people', function(text){
+    console.log(text) // Whole text
+});
+```
+## Example Speech
+```
+  //The first parameter is speech, The second parameter is the language
+  // language is optional, default: 'en-US'
+  EasyVoice.reproduce('Hello my friend.', 'en-US');
 ```
 ## Installation of dependencies for use or development
 ```

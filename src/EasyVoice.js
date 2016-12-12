@@ -1,6 +1,7 @@
 export default function EasyVoice($window, $timeout){
     const EasyVoice = {};
     let recognition = undefined,
+        voice,
         listening = false,
         autoClose = true,
         userKeyword,
@@ -53,13 +54,22 @@ export default function EasyVoice($window, $timeout){
           }
     `;
 
+    if(('SpeechSynthesisUtterance' in $window)){
+      voice = new SpeechSynthesisUtterance();
+      var voices = window.speechSynthesis.getVoices();
+      // voice.voiceURI = 'Google português do Brasil'; //discovered after dumping getVoices()
+      voice.lang = "en-US";
+      voice.localService = true;
+      voice.voice = voices[5];
+    }
+
     if (('webkitSpeechRecognition' in $window)) {
         recognition = new webkitSpeechRecognition();
         templateDOC = parser.parseFromString(template, "text/html");
         const element = templateDOC.getElementById('angular-easy-voice-container');
         const style = document.createElement('style');
         style.type = 'text/css';
-        if (style.styleSheet){
+        if (style.styleSheet) {
             style.styleSheet.cssText = templateStyle;
         } else {
             style.appendChild(document.createTextNode(templateStyle));
@@ -84,27 +94,15 @@ export default function EasyVoice($window, $timeout){
             }, 5000);
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
-                if((userCallback && typeof userCallback == 'function') && event.results[i].isFinal){
+                if((userCallback && typeof userCallback == 'function')
+                    && event.results[i].isFinal
+                    && listening){
                     userCallback(event.results[i][0].transcript);
                 }
                 if(userConfiguration.debug && event.results[i].isFinal){
                     console.info('Debug: ' + event.results[i][0].transcript);
                 }
-                if(listening && event.results[i].isFinal){
-                    commands.forEach(command => {
-                        if((command.key && command.callback) && event.results[i][0].transcript == command.key){
-                            if(command.close){
-                                listening = false;
-                                if(body.querySelector('#angular-easy-voice-container') != null){
-                                    body.removeChild(element);
-                                }
-                            }
-                            command.callback();
-                            return;
-                        }
-                    });
-                }
-                if(userKeyword.trim() == event.results[i][0].transcript.trim() && !listening && event.results[i].isFinal){
+                if(userKeyword && userKeyword.trim() == event.results[i][0].transcript.trim() && !listening && event.results[i].isFinal){
                     listening = true;
                     if(body.querySelector('#angular-easy-voice-container') != null){
                         body.removeChild(element);
@@ -115,6 +113,21 @@ export default function EasyVoice($window, $timeout){
                         return;
                     }
                     body.appendChild(element);
+                }
+                if(listening && event.results[i].isFinal){
+                    commands.forEach(command => {
+                        if(((command.key && command.callback) && event.results[i][0].transcript.startsWith(command.key))
+                        || ((command.key && command.callback) && event.results[i][0].transcript == command.key)){
+                              if(command.close){
+                                  listening = false;
+                                  if(body.querySelector('#angular-easy-voice-container') != null){
+                                      body.removeChild(element);
+                                  }
+                              }
+                              command.callback(event.results[i][0].transcript);
+                              return;
+                        }
+                    });
                 }
             }
         }
@@ -127,7 +140,7 @@ export default function EasyVoice($window, $timeout){
 
     }
 
-    EasyVoice.initWatch = (keyword, configurations, callback) => {
+    EasyVoice.__proto__.initWatch = (keyword, configurations, callback) => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";
         }
@@ -143,7 +156,14 @@ export default function EasyVoice($window, $timeout){
         this.initRecognition();
     }
 
-    EasyVoice.stopWatch = () => {
+    EasyVoice.__proto__.reproduce = (str, lang) => {
+        voice.lang = lang || (userConfiguration&& userConfiguration.lang
+          ? userConfiguration.lang : 'en-US');
+        voice.text = str;
+        speechSynthesis.speak(voice);
+    }
+
+    EasyVoice.__proto__.stopWatch = () => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";
         }
@@ -156,7 +176,7 @@ export default function EasyVoice($window, $timeout){
         }
     }
 
-    EasyVoice.addCommand = (key, callback, close) => {
+    EasyVoice.__proto__.addCommand = (key, callback, close, watchStart) => {
         if(commands.filter(command => {
             return command.key == key;
         }).length > 0){
@@ -165,11 +185,18 @@ export default function EasyVoice($window, $timeout){
         if(!key || typeof key != 'string' || !callback || typeof callback != 'function'){
             throw "Please enter a phrase and one function.";
         }
-        if(close == undefined || close != 'boolean'){
+        if(close == undefined || typeof close != 'boolean'){
             close = true;
         }
-        commands.push({key: key, callback: callback, close: close});
+        if(watchStart == undefined || typeof watchStart != 'boolean'){
+            watchStart = false;
+        }
+        commands.push({key: key, callback: callback, close: close, watchStart: watchStart});
     };
+
+    EasyVoice.__proto__.addCommandStartingWith = (key, callback, close) => {
+        EasyVoice.addCommand(key, callback, close, true);
+    }
 
     this.initRecognition = () => {
         if(userConfiguration){

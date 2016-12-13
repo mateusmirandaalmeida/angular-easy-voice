@@ -176,7 +176,7 @@ export default function EasyVoice($window, $timeout){
 
     }
 
-    EasyVoice.__proto__.initWatch = (keyword, configurations, callback) => {
+    EasyVoice.initWatch = (keyword, configurations, callback) => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";
         }
@@ -192,14 +192,14 @@ export default function EasyVoice($window, $timeout){
         this.initRecognition();
     }
 
-    EasyVoice.__proto__.reproduce = (str, lang) => {
+    EasyVoice.reproduce = (str, lang) => {
         voice.lang = lang || (userConfiguration&& userConfiguration.lang
           ? userConfiguration.lang : 'en-US');
         voice.text = str;
         speechSynthesis.speak(voice);
     }
 
-    EasyVoice.__proto__.stopWatch = () => {
+    EasyVoice.stopWatch = () => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";
         }
@@ -228,7 +228,7 @@ export default function EasyVoice($window, $timeout){
         AudioStream = undefined;
     }
 
-    EasyVoice.__proto__.addCommand = (key, callback, close, watchStart) => {
+    EasyVoice.addCommand = (key, callback, close, watchStart) => {
         if(commands.filter(command => {
             return command.key == key;
         }).length > 0){
@@ -246,7 +246,7 @@ export default function EasyVoice($window, $timeout){
         commands.push({key: key, callback: callback, close: close, watchStart: watchStart});
     };
 
-    EasyVoice.__proto__.addCommandStartingWith = (key, callback, close) => {
+    EasyVoice.addCommandStartingWith = (key, callback, close) => {
         EasyVoice.addCommand(key, callback, close, true);
     }
 

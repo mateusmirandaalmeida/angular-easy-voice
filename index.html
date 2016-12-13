@@ -22,6 +22,7 @@
       <script type="text/javascript">
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
+              console.log(EasyVoice);
 
               //Command will be executed when the user phrase starts with "Search people"
               // EasyVoice.addCommandStartingWith('Search people', function(text){

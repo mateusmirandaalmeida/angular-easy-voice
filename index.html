@@ -12,6 +12,7 @@
 
           <h1>Example Angular Easy Voice.</h1>
 
+          <button ng-click="init()">Começar</button>
           <button ng-click="stop()">Parar</button>
 
       </div>
@@ -22,12 +23,16 @@
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
 
-              EasyVoice.reproduce('Hello my friend.')
-
               //Command will be executed when the user phrase starts with "Search people"
-              EasyVoice.addCommandStartingWith('Search people', function(text){
-                  console.log(text) // Whole text
-              });
+              // EasyVoice.addCommandStartingWith('Search people', function(text){
+              //     console.log(text) // Whole text
+              // });
+
+              EasyVoice.addCommand('Que dia é hoje', function(text){
+                  var date = new Date();
+                  EasyVoice.reproduce('Hoje é dia '+date.getUTCDate()+' do '+(date.getUTCMonth() + 1)+' de '+date.getUTCFullYear())
+              }, true)
+
 
               // EasyVoice.addCommandStartingWith('Quanto é', function(text){
               //     var str = text.split('Quanto é')[1];
@@ -38,10 +43,13 @@
               //     }
               // });
 
+              $scope.init = function(){
+
+              }
               EasyVoice.initWatch('Ok Google', {
                   lang: 'pt-BR'
               }, function(resp){
-                  console.log(resp);
+                  // console.log(resp);
               });
 
               $scope.stop = function(){

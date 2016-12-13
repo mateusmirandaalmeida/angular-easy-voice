@@ -1,7 +1,17 @@
 export default function EasyVoice($window, $timeout){
+    $window.AudioContext = $window.AudioContext || $window.webkitAudioContext;
     const EasyVoice = {};
     let recognition = undefined,
+        audioContext = new AudioContext(),
+        inputPoint,
+        realAudioInput,
+        audioInput,
+        analyserNode,
+        AudioStream,
+        rafID,
         voice,
+        voiceContainer,
+        buttonMicrophone,
         listening = false,
         autoClose = true,
         userKeyword,
@@ -9,16 +19,16 @@ export default function EasyVoice($window, $timeout){
         userCallback,
         interval = undefined,
         commands = [],
+        DOMURL = window.URL || window.webkitURL || window,
         parser = new DOMParser(),
         body = document.getElementsByTagName('body')[0],
         head = document.head || document.getElementsByTagName('head')[0],
         templateDOC;
 
     let template = `
-        <div style="position: absolute;left: 0;top: 0;width: 100%;height: 100%;background: #fff;text-align: center;z-index: 99999;"
-          id="angular-easy-voice-container">
+        <div id="angular-easy-voice-container">
           <div style="margin-top: 10%;">
-            <button class="blink" style="background: transparent;border: 1px solid #ccc;border-radius: 62%;padding: 30px;" id="angular-easy-voice-microphone">
+          <button class="" id="angular-easy-voice-microphone">
               <svg width="64" version="1.1" xmlns="http://www.w3.org/2000/svg" height="64" viewBox="0 0 64 64" xmlns:xlink="http://www.w3.org/1999/xlink" enable-background="new 0 0 64 64">
                 <g>
                   <g fill="red">
@@ -27,32 +37,51 @@ export default function EasyVoice($window, $timeout){
                   </g>
                 </g>
               </svg>
-            </button>
+          </div>
+          <div style="margin-top: 2%;">
+            <label id="angular-easy-voice-text"></label>
           </div>
         </div>
     `;
 
+
     let templateStyle = `
-          @keyframes blink {
-            0% { box-shadow: 0px 0px 10px 1px #ccc; }
-            50% { box-shadow: 0px 0px 13px 10px #ccc; }
-            100% { box-shadow: 0px 0px 10px 1px #ccc; }
+
+          #angular-easy-voice-container{
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              height: 100%;
+              background: #fff;
+              text-align: center;
+              z-index: 99999;
           }
 
-          @-webkit-keyframes blink {
-            0% { box-shadow: 0px 0px 10px 1px #ccc; }
-            50% { box-shadow: 0px 0px 13px 10px #ccc; }
-            100% { box-shadow: 0px 0px 10px 1px #ccc; }
+          #angular-easy-voice-microphone{
+              background: transparent;
+              border: 1px solid #ccc;
+              border-radius: 62%;
+              padding: 30px;
           }
 
-          .blink {
-            -webkit-animation: blink 1.0s linear infinite;
-            -moz-animation: blink 1.0s linear infinite;
-            -ms-animation: blink 1.0s linear infinite;
-            -o-animation: blink 1.0s linear infinite;
-            animation: blink 1.0s linear infinite;
+          #angular-easy-voice-text{
+              color: #777;
+              font-weight: normal;
+              font-family: arial,sans-serif;
+              line-height: 1.2;
+              transition: opacity .1s ease-in,margin-left .5s ease-in,top 0s linear 0.218s;
+              font-size: 32px;
           }
+
     `;
+
+    if (!navigator.getUserMedia)
+        navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    if (!navigator.cancelAnimationFrame)
+        navigator.cancelAnimationFrame = navigator.webkitCancelAnimationFrame || navigator.mozCancelAnimationFrame;
+    if (!navigator.requestAnimationFrame)
+        navigator.requestAnimationFrame = navigator.webkitRequestAnimationFrame || navigator.mozRequestAnimationFrame;
 
     if(('SpeechSynthesisUtterance' in $window)){
       voice = new SpeechSynthesisUtterance();
@@ -63,17 +92,21 @@ export default function EasyVoice($window, $timeout){
       voice.voice = voices[5];
     }
 
+
     if (('webkitSpeechRecognition' in $window)) {
         recognition = new webkitSpeechRecognition();
         templateDOC = parser.parseFromString(template, "text/html");
-        const element = templateDOC.getElementById('angular-easy-voice-container');
+        voiceContainer = templateDOC.getElementById('angular-easy-voice-container');
+        buttonMicrophone = voiceContainer.querySelector('#angular-easy-voice-microphone');
         const style = document.createElement('style');
+        const labelText = voiceContainer.querySelector('#angular-easy-voice-text');
         style.type = 'text/css';
         if (style.styleSheet) {
             style.styleSheet.cssText = templateStyle;
         } else {
             style.appendChild(document.createTextNode(templateStyle));
         }
+
         head.appendChild(style);
         recognition.continuous = false;
         recognition.interimResults = true;
@@ -89,11 +122,13 @@ export default function EasyVoice($window, $timeout){
             interval = $timeout(() => {
                 listening = false;
                 if(body.querySelector('#angular-easy-voice-container') != null){
-                    body.removeChild(element);
+                    body.removeChild(voiceContainer);
                 }
             }, 5000);
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
+                labelText.innerHTML = event.results[i][0].transcript;
+
                 if((userCallback && typeof userCallback == 'function')
                     && event.results[i].isFinal
                     && listening){
@@ -105,23 +140,24 @@ export default function EasyVoice($window, $timeout){
                 if(userKeyword && userKeyword.trim() == event.results[i][0].transcript.trim() && !listening && event.results[i].isFinal){
                     listening = true;
                     if(body.querySelector('#angular-easy-voice-container') != null){
-                        body.removeChild(element);
+                        body.removeChild(voiceContainer);
                     }
-                    element.onclick = () => {
+                    voiceContainer.onclick = () => {
                         listening = false;
-                        body.removeChild(element);
+                        body.removeChild(voiceContainer);
                         return;
                     }
-                    body.appendChild(element);
+                    labelText.innerHTML = 'Fale agora';
+                    body.appendChild(voiceContainer);
                 }
                 if(listening && event.results[i].isFinal){
                     commands.forEach(command => {
-                        if(((command.key && command.callback) && event.results[i][0].transcript.startsWith(command.key))
+                        if(((command.key && command.callback) && command.watchStart && event.results[i][0].transcript.startsWith(command.key))
                         || ((command.key && command.callback) && event.results[i][0].transcript == command.key)){
                               if(command.close){
                                   listening = false;
                                   if(body.querySelector('#angular-easy-voice-container') != null){
-                                      body.removeChild(element);
+                                      body.removeChild(voiceContainer);
                                   }
                               }
                               command.callback(event.results[i][0].transcript);
@@ -174,6 +210,22 @@ export default function EasyVoice($window, $timeout){
             listening = false;
             recognition.stop();
         }
+        if (AudioStream != undefined) {
+            AudioStream.getAudioTracks().forEach(function (stream) {
+                stream.stop();
+            });
+            AudioStream.getTracks().forEach(function (stream) {
+                stream.stop();
+            });
+            if(AudioStream.stop){
+                AudioStream.stop();
+            }
+        }
+        if (rafID != null) {
+            $window.cancelAnimationFrame(rafID);
+        }
+
+        AudioStream = undefined;
     }
 
     EasyVoice.__proto__.addCommand = (key, callback, close, watchStart) => {
@@ -198,12 +250,64 @@ export default function EasyVoice($window, $timeout){
         EasyVoice.addCommand(key, callback, close, true);
     }
 
+    this.updateAnalysers = () => {
+      if(listening){
+        var freqByteData = new Uint8Array(analyserNode.frequencyBinCount);
+        analyserNode.getByteFrequencyData(freqByteData);
+
+        var multiplier = analyserNode.frequencyBinCount / 10;
+        for (var i = 0; i < 10; ++i) {
+            var magnitude = 0;
+            var offset = Math.floor(i * multiplier);
+            for (var j = 0; j < multiplier; j++){
+              magnitude += freqByteData[offset + j];
+            }
+            magnitude = magnitude / multiplier;
+            if(i == 4){
+                buttonMicrophone.style.boxShadow = '0px 0px 13px '+Math.round(magnitude-5)+'px #ddd';
+            }
+        }
+
+      }
+      rafID = $window.requestAnimationFrame(this.updateAnalysers);
+    }
+
+    this.stream = stream => {
+        AudioStream = stream;
+        inputPoint = audioContext.createGain();
+        realAudioInput = audioContext.createMediaStreamSource(stream);
+        audioInput = realAudioInput;
+        audioInput.connect(inputPoint);
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 2048;
+        inputPoint.connect(analyserNode);
+        this.updateAnalysers();
+    }
+
     this.initRecognition = () => {
         if(userConfiguration){
             angular.extend(recognition, userConfiguration);
         }
         autoClose = true;
-        recognition.start();
+        if(AudioStream == undefined){
+            navigator.getUserMedia(
+                {
+                    "audio": {
+                        "mandatory": {
+                            "googEchoCancellation": "false",
+                            "googAutoGainControl": "false",
+                            "googNoiseSuppression": "false",
+                            "googHighpassFilter": "false"
+                        },
+                        "optional": []
+                    },
+                }, this.stream, function (e) {
+                  throw "Please, check your microphone.";
+            });
+        }
+
+      recognition.start();
+
     }
 
     return EasyVoice;

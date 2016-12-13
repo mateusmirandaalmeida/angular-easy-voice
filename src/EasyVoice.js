@@ -7,6 +7,7 @@ export default function EasyVoice($window, $timeout){
         realAudioInput,
         audioInput,
         analyserNode,
+        speechRecognitionList,
         AudioStream,
         rafID,
         voice,
@@ -18,8 +19,8 @@ export default function EasyVoice($window, $timeout){
         userConfiguration,
         userCallback,
         interval = undefined,
+        words = [],
         commands = [],
-        DOMURL = window.URL || window.webkitURL || window,
         parser = new DOMParser(),
         body = document.getElementsByTagName('body')[0],
         head = document.head || document.getElementsByTagName('head')[0],
@@ -92,7 +93,6 @@ export default function EasyVoice($window, $timeout){
       voice.voice = voices[5];
     }
 
-
     if (('webkitSpeechRecognition' in $window)) {
         recognition = new webkitSpeechRecognition();
         templateDOC = parser.parseFromString(template, "text/html");
@@ -128,6 +128,18 @@ export default function EasyVoice($window, $timeout){
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
                 labelText.innerHTML = event.results[i][0].transcript;
+
+                // if(event.results[i][0].confidence < 0.60 && event.results[i].isFinal){
+                //     var distances = [];
+                //     words.forEach(word=>{
+                //         distances.push({word: word, distance: this.similarText(word, event.results[i][0].transcript)});
+                //     })
+                //     distances = distances.sort(function(a, b){return b.distance - a.distance;})
+                //     if(distances.length > 0){
+                //         event.results[i][0].transcript = distances[0].word;
+                //         console.log(event.results[i][0].transcript)
+                //     }
+                // }
 
                 if((userCallback && typeof userCallback == 'function')
                     && event.results[i].isFinal
@@ -228,6 +240,18 @@ export default function EasyVoice($window, $timeout){
         AudioStream = undefined;
     }
 
+    EasyVoice.addWord = word => {
+        if(!word || (typeof word != 'string' && typeof word != 'object')){
+            throw "Please, check your word.";
+        }
+        if(typeof word == 'string'){
+            words.push(word);
+        }
+        if(typeof word == 'object'){
+            words = words.concat(word);
+        }
+    }
+
     EasyVoice.addCommand = (key, callback, close, watchStart) => {
         if(commands.filter(command => {
             return command.key == key;
@@ -307,10 +331,71 @@ export default function EasyVoice($window, $timeout){
         }
 
       recognition.start();
+    }
 
+    this.similarText = (first, second, percent) => { // eslint-disable-line camelcase
+          // original by: Rafał Kukawski (http://blog.kukawski.pl)
+          // bugfixed by: Chris McMacken
+          // bugfixed by: Jarkko Rantavuori original by findings in stackoverflow (http://stackoverflow.com/questions/14136349/how-does-similar-text-work)
+          // improved by: Markus Padourek (taken from http://www.kevinhq.com/2012/06/php-similartext-function-in-javascript_16.html)
+          if (first === null ||
+            second === null ||
+            typeof first === 'undefined' ||
+            typeof second === 'undefined') {
+            return 0
+          }
+
+          first += ''
+          second += ''
+
+          var pos1 = 0
+          var pos2 = 0
+          var max = 0
+          var firstLength = first.length
+          var secondLength = second.length
+          var p
+          var q
+          var l
+          var sum
+
+          for (p = 0; p < firstLength; p++) {
+            for (q = 0; q < secondLength; q++) {
+              for (l = 0; (p + l < firstLength) && (q + l < secondLength) && (first.charAt(p + l) === second.charAt(q + l)); l++) {
+                // eslint-disable-line max-len
+                // @todo: ^-- break up this crazy for loop and put the logic in its body
+              }
+              if (l > max) {
+                max = l
+                pos1 = p
+                pos2 = q
+              }
+            }
+          }
+
+          sum = max
+
+          if (sum) {
+            if (pos1 && pos2) {
+              sum += this.similarText(first.substr(0, pos1), second.substr(0, pos2))
+            }
+
+            if ((pos1 + max < firstLength) && (pos2 + max < secondLength)) {
+              sum += this.similarText(
+                first.substr(pos1 + max, firstLength - pos1 - max),
+                second.substr(pos2 + max,
+                secondLength - pos2 - max))
+            }
+          }
+
+          if (!percent) {
+            return sum
+          }
+
+          return (sum * 200) / (firstLength + secondLength)
     }
 
     return EasyVoice;
 }
+
 
 EasyVoice.$inject = ['$window', '$timeout'];

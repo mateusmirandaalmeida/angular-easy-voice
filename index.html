@@ -22,12 +22,6 @@
       <script type="text/javascript">
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
-              console.log(EasyVoice);
-
-              //Command will be executed when the user phrase starts with "Search people"
-              // EasyVoice.addCommandStartingWith('Search people', function(text){
-              //     console.log(text) // Whole text
-              // });
 
               EasyVoice.addCommand('Que dia é hoje', function(text){
                   var date = new Date();
@@ -44,9 +38,11 @@
               //     }
               // });
 
-              $scope.init = function(){
+              EasyVoice.addWord(["gumga", "munif"]);
 
-              }
+              var transcript = 'monique';
+
+
               EasyVoice.initWatch('Ok Google', {
                   lang: 'pt-BR'
               }, function(resp){

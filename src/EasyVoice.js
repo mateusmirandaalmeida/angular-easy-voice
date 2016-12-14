@@ -115,6 +115,8 @@ export default function EasyVoice($window, $timeout){
         recognition.continuous = false;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
+        voiceContainer.style.display="none";
+        body.appendChild(voiceContainer);
 
         recognition.onresult = event => {
 
@@ -124,10 +126,7 @@ export default function EasyVoice($window, $timeout){
             }
 
             interval = $timeout(() => {
-                listening = false;
-                if(body.querySelector('#angular-easy-voice-container') != null){
-                    body.removeChild(voiceContainer);
-                }
+                EasyVoice.stopListening();
             }, 5000);
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
@@ -156,30 +155,28 @@ export default function EasyVoice($window, $timeout){
                     console.info('Debug: ' + transcript);
                 }
                 if(userKeyword && userKeyword.trim() == transcript.trim() && !listening && event.results[i].isFinal){
-                    listening = true;
-                    if(body.querySelector('#angular-easy-voice-container') != null){
-                        body.removeChild(voiceContainer);
-                    }
-                    voiceContainer.onclick = () => {
-                        listening = false;
-                        body.removeChild(voiceContainer);
-                        return;
-                    }
-                    labelText.innerHTML = 'Fale agora';
-                    if(EasyVoice.onstart && typeof EasyVoice.onstart == 'function'){
-                        EasyVoice.onstart();
-                    }
-                    body.appendChild(voiceContainer);
+                    $timeout(()=>{
+                        listening = true;
+                        if(body.querySelector('#angular-easy-voice-container') != null){
+                            voiceContainer.style.display="none";
+                        }
+                        voiceContainer.onclick = () => {
+                            EasyVoice.stopListening();
+                            return;
+                        }
+                        labelText.innerHTML = 'Fale agora';
+                        if(EasyVoice.onstart && typeof EasyVoice.onstart == 'function'){
+                            EasyVoice.onstart();
+                        }
+                        voiceContainer.style.display="block";
+                    });                    
                 }
                 if(listening && event.results[i].isFinal){
                     commands.forEach(command => {
                         if(((command.key && command.callback) && command.watchStart && transcript.startsWith(command.key))
                         || ((command.key && command.callback) && transcript == command.key)){
                               if(command.close){
-                                  listening = false;
-                                  if(body.querySelector('#angular-easy-voice-container') != null){
-                                      body.removeChild(voiceContainer);
-                                  }
+                                  EasyVoice.stopListening();
                               }
                               command.callback(transcript);
                         }
@@ -197,6 +194,13 @@ export default function EasyVoice($window, $timeout){
             }
         }
 
+    }
+
+    EasyVoice.stopListening = () => {
+        listening = false;
+        if(body.querySelector('#angular-easy-voice-container') != null){
+            voiceContainer.style.display="none";
+        }
     }
 
     EasyVoice.getCommands = () => {

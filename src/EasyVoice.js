@@ -203,6 +203,10 @@ export default function EasyVoice($window, $timeout){
         return commands;
     }
 
+    EasyVoice.isRunning = () => {
+        return AudioStream == undefined ? false: true;
+    }
+
     EasyVoice.initWatch = (keyword, configurations, callback) => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";

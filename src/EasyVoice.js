@@ -127,29 +127,31 @@ export default function EasyVoice($window, $timeout){
             }, 5000);
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
-                labelText.innerHTML = event.results[i][0].transcript;
+                var transcript = event.results[i][0].transcript;
+                if(event.results[i][0].confidence < 0.9 && event.results[i].isFinal){
+                    transcript.split(" ").forEach(function(text){
+                      var distances = [];
+                      words.forEach(word=>{
+                          distances.push({word: word, distance: EasyVoice.similarText(word, text)});
+                      })
+                      distances = distances.sort(function(a, b){return b.distance - a.distance;})
+                      if(distances.length > 0 && distances[0].distance >= 3){
+                          transcript = transcript.replace(new RegExp(text, 'g'), distances[0].word);
+                      }
+                    })
+                }
 
-                // if(event.results[i][0].confidence < 0.60 && event.results[i].isFinal){
-                //     var distances = [];
-                //     words.forEach(word=>{
-                //         distances.push({word: word, distance: this.similarText(word, event.results[i][0].transcript)});
-                //     })
-                //     distances = distances.sort(function(a, b){return b.distance - a.distance;})
-                //     if(distances.length > 0){
-                //         event.results[i][0].transcript = distances[0].word;
-                //         console.log(event.results[i][0].transcript)
-                //     }
-                // }
+                labelText.innerHTML = transcript;
 
                 if((userCallback && typeof userCallback == 'function')
                     && event.results[i].isFinal
                     && listening){
-                    userCallback(event.results[i][0].transcript);
+                    userCallback(transcript);
                 }
                 if(userConfiguration.debug && event.results[i].isFinal){
-                    console.info('Debug: ' + event.results[i][0].transcript);
+                    console.info('Debug: ' + transcript);
                 }
-                if(userKeyword && userKeyword.trim() == event.results[i][0].transcript.trim() && !listening && event.results[i].isFinal){
+                if(userKeyword && userKeyword.trim() == transcript.trim() && !listening && event.results[i].isFinal){
                     listening = true;
                     if(body.querySelector('#angular-easy-voice-container') != null){
                         body.removeChild(voiceContainer);
@@ -164,15 +166,15 @@ export default function EasyVoice($window, $timeout){
                 }
                 if(listening && event.results[i].isFinal){
                     commands.forEach(command => {
-                        if(((command.key && command.callback) && command.watchStart && event.results[i][0].transcript.startsWith(command.key))
-                        || ((command.key && command.callback) && event.results[i][0].transcript == command.key)){
+                        if(((command.key && command.callback) && command.watchStart && transcript.startsWith(command.key))
+                        || ((command.key && command.callback) && transcript == command.key)){
                               if(command.close){
                                   listening = false;
                                   if(body.querySelector('#angular-easy-voice-container') != null){
                                       body.removeChild(voiceContainer);
                                   }
                               }
-                              command.callback(event.results[i][0].transcript);
+                              command.callback(transcript);
                               return;
                         }
                     });
@@ -186,6 +188,10 @@ export default function EasyVoice($window, $timeout){
             }
         }
 
+    }
+
+    EasyVoice.getCommands = () => {
+        return commands;
     }
 
     EasyVoice.initWatch = (keyword, configurations, callback) => {
@@ -333,7 +339,7 @@ export default function EasyVoice($window, $timeout){
       recognition.start();
     }
 
-    this.similarText = (first, second, percent) => { // eslint-disable-line camelcase
+    EasyVoice.similarText = (first, second, percent) => { // eslint-disable-line camelcase
           // original by: Rafał Kukawski (http://blog.kukawski.pl)
           // bugfixed by: Chris McMacken
           // bugfixed by: Jarkko Rantavuori original by findings in stackoverflow (http://stackoverflow.com/questions/14136349/how-does-similar-text-work)
@@ -376,11 +382,11 @@ export default function EasyVoice($window, $timeout){
 
           if (sum) {
             if (pos1 && pos2) {
-              sum += this.similarText(first.substr(0, pos1), second.substr(0, pos2))
+              sum += EasyVoice.similarText(first.substr(0, pos1), second.substr(0, pos2))
             }
 
             if ((pos1 + max < firstLength) && (pos2 + max < secondLength)) {
-              sum += this.similarText(
+              sum += EasyVoice.similarText(
                 first.substr(pos1 + max, firstLength - pos1 - max),
                 second.substr(pos2 + max,
                 secondLength - pos2 - max))

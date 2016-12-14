@@ -23,30 +23,12 @@
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
 
-              EasyVoice.addCommand('Que dia é hoje', function(text){
-                  var date = new Date();
-                  EasyVoice.reproduce('Hoje é dia '+date.getUTCDate()+' do '+(date.getUTCMonth() + 1)+' de '+date.getUTCFullYear())
-              }, true)
+              EasyVoice.addWord(["Gumga", "Papadi"]);
 
-
-              // EasyVoice.addCommandStartingWith('Quanto é', function(text){
-              //     var str = text.split('Quanto é')[1];
-              //     if(str.indexOf('mais') != -1){
-              //        var n1 = parseInt(str.split('mais')[0].trim());
-              //        var n2 = parseInt(str.split('mais')[1].trim());
-              //        EasyVoice.reproduce('A soma dos números: '+(n1+n2));
-              //     }
-              // });
-
-              EasyVoice.addWord(["gumga", "munif"]);
-
-              var transcript = 'monique';
-
-
-              EasyVoice.initWatch('Ok Google', {
+              EasyVoice.initWatch('acorde Gumga', {
                   lang: 'pt-BR'
               }, function(resp){
-                  // console.log(resp);
+                  console.log(resp);
               });
 
               $scope.stop = function(){

@@ -54,6 +54,11 @@ EasyVoice.addCommandStartingWith('Search people', function(text){
   // language is optional, default: 'en-US'
   EasyVoice.reproduce('Hello my friend.', 'en-US');
 ```
+
+#Add words
+```
+  EasyVoice.addWord("Gumga");  // or ["Gumga", "Other"]
+```
 ## Installation of dependencies for use or development
 ```
 npm install

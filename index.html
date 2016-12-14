@@ -23,9 +23,13 @@
           angular.module('app', ['angular-easy-voice'])
             .controller('Ctrl', function($scope, EasyVoice){
 
+              EasyVoice.onresult = function(text){
+                  console.log(text)
+              }
+
               EasyVoice.addWord(["Gumga", "Papadi"]);
 
-              EasyVoice.initWatch('acorde Gumga', {
+              EasyVoice.initWatch('Ok Google', {
                   lang: 'pt-BR'
               }, function(resp){
                   // console.log(resp);

@@ -1,6 +1,10 @@
 export default function EasyVoice($window, $timeout){
     $window.AudioContext = $window.AudioContext || $window.webkitAudioContext;
-    const EasyVoice = {};
+    const EasyVoice = {
+        oninit: undefined,
+        onstart: undefined,
+        onresult: undefined
+    };
     let recognition = undefined,
         audioContext = new AudioContext(),
         inputPoint,
@@ -162,6 +166,9 @@ export default function EasyVoice($window, $timeout){
                         return;
                     }
                     labelText.innerHTML = 'Fale agora';
+                    if(EasyVoice.onstart && typeof EasyVoice.onstart == 'function'){
+                        EasyVoice.onstart();
+                    }
                     body.appendChild(voiceContainer);
                 }
                 if(listening && event.results[i].isFinal){
@@ -175,9 +182,11 @@ export default function EasyVoice($window, $timeout){
                                   }
                               }
                               command.callback(transcript);
-                              return;
                         }
                     });
+                }
+                if(EasyVoice.onresult && typeof EasyVoice.onresult == 'function' && listening && event.results[i].isFinal && transcript != userKeyword){
+                    EasyVoice.onresult(transcript);
                 }
             }
         }
@@ -337,6 +346,11 @@ export default function EasyVoice($window, $timeout){
         }
 
       recognition.start();
+
+      if(EasyVoice.oninit && typeof EasyVoice.oninit == 'function'){
+          EasyVoice.oninit();
+      }
+
     }
 
     EasyVoice.similarText = (first, second, percent) => { // eslint-disable-line camelcase

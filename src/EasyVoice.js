@@ -17,12 +17,22 @@ export default function EasyVoice($window, $timeout){
         rafID,
         voice,
         voiceContainer,
+        translate = {
+            speakNow: 'Speak Now',
+            notUnderstand : 'Not understand.',
+            tryAgain : 'Try again.',
+            checkMicrophone: 'Please, check your microphone.',
+            listening: 'listening...'
+        },
         buttonMicrophone,
         listening = false,
         autoClose = true,
         userKeyword,
+        labelText,
         userConfiguration,
         userCallback,
+        intervalListening = undefined,
+        tryAgainInterval = undefined,
         interval = undefined,
         words = [],
         commands = [],
@@ -49,7 +59,6 @@ export default function EasyVoice($window, $timeout){
           </div>
         </div>
     `;
-
 
     let templateStyle = `
 
@@ -104,7 +113,7 @@ export default function EasyVoice($window, $timeout){
         voiceContainer = templateDOC.getElementById('angular-easy-voice-container');
         buttonMicrophone = voiceContainer.querySelector('#angular-easy-voice-microphone');
         const style = document.createElement('style');
-        const labelText = voiceContainer.querySelector('#angular-easy-voice-text');
+        labelText = voiceContainer.querySelector('#angular-easy-voice-text');
         style.type = 'text/css';
         if (style.styleSheet) {
             style.styleSheet.cssText = templateStyle;
@@ -126,8 +135,35 @@ export default function EasyVoice($window, $timeout){
                 interval = undefined;
             }
 
+            if(intervalListening != undefined){
+                $timeout.cancel(intervalListening);
+                intervalListening = undefined;
+            }
+
+            if(tryAgainInterval != undefined){
+                $timeout.cancel(tryAgainInterval);
+                tryAgainInterval = undefined;
+            }
+
             interval = $timeout(() => {
-                EasyVoice.stopListening();
+                labelText.innerHTML = translate.notUnderstand+'  '
+                var tryAgain = document.createElement('a');
+                tryAgain.style.fontWeight = '500';
+                tryAgain.style.cursor = 'pointer';
+                tryAgain.style.fontSize = '18px';
+                tryAgain.style.color = '#1155cc';
+                tryAgain.innerHTML = translate.tryAgain;
+                tryAgain.onclick = (evt) => {
+                    EasyVoice.startListening();
+                    evt.stopPropagation();
+                }
+                tryAgainInterval = $timeout(()=>{
+                  EasyVoice.stopListening();
+                }, 3000);
+                if(labelText.querySelector('#try-again') != null){
+                    labelText.removeChild(tryAgain);
+                }
+                labelText.appendChild(tryAgain);
             }, 5000);
 
             for (var i = event.resultIndex; i < event.results.length; ++i) {
@@ -155,27 +191,15 @@ export default function EasyVoice($window, $timeout){
                 if(userConfiguration.debug && event.results[i].isFinal){
                     console.info('Debug: ' + transcript);
                 }
-                if(userKeyword && userKeyword.trim() == transcript.trim() && !listening && event.results[i].isFinal){
+                if(userKeyword && userKeyword.trim().toLowerCase() == transcript.trim().toLowerCase() && !listening && event.results[i].isFinal){
                     $timeout(()=>{
-                        listening = true;
-                        if(body.querySelector('#angular-easy-voice-container') != null){
-                            voiceContainer.style.display="none";
-                        }
-                        voiceContainer.onclick = () => {
-                            EasyVoice.stopListening();
-                            return;
-                        }
-                        labelText.innerHTML = 'Fale agora';
-                        if(EasyVoice.onstart && typeof EasyVoice.onstart == 'function'){
-                            EasyVoice.onstart();
-                        }
-                        voiceContainer.style.display="block";
+                        EasyVoice.startListening();
                     });
                 }
                 if(listening && event.results[i].isFinal){
                     commands.forEach(command => {
-                        if(((command.key && command.callback) && command.watchStart && transcript.startsWith(command.key))
-                        || ((command.key && command.callback) && transcript == command.key)){
+                        if(((command.key && command.callback) && command.watchStart && transcript.toLowerCase().startsWith(command.key.toLowerCase()))
+                        || ((command.key && command.callback) && transcript.toLowerCase() == command.key.toLowerCase())){
                               if(command.close){
                                   EasyVoice.stopListening();
                               }
@@ -185,13 +209,40 @@ export default function EasyVoice($window, $timeout){
                 }
 
                 if(EasyVoice.onresult && typeof EasyVoice.onresult == 'function' && listening && event.results[i].isFinal && transcript != userKeyword){
+                    if(interval != undefined){
+                        $timeout.cancel(interval);
+                        interval = undefined;
+                    }
+                    tryAgainInterval = $timeout(()=>{
+                      EasyVoice.stopListening();
+                    }, 3000);
                     EasyVoice.onresult(transcript);
                 }
 
                 if(EasyVoice.onuserphrase && typeof EasyVoice.onuserphrase == 'function' && event.results[i].isFinal && transcript != userKeyword){
+                    if(interval != undefined){
+                        $timeout.cancel(interval);
+                        interval = undefined;
+                    }
+                    tryAgainInterval = $timeout(()=>{
+                      EasyVoice.stopListening();
+                    }, 3000);
                     EasyVoice.onuserphrase(transcript);
                 }
 
+            }
+        }
+
+        recognition.onerror = (error) => {
+            if(error.error == 'aborted'){
+              autoClose = false;
+              EasyVoice.stopWatch();
+              voiceContainer.onclick = () => {
+                  voiceContainer.style.display="none";
+                  return;
+              }
+              labelText.innerHTML = translate.checkMicrophone;
+              voiceContainer.style.display="block";
             }
         }
 
@@ -201,6 +252,42 @@ export default function EasyVoice($window, $timeout){
             }
         }
 
+    }
+
+    EasyVoice.setTranslate = userTranslate => {
+        if(typeof userTranslate != 'object'){
+            throw "Translation needs to be an object.";
+        }
+        Object.keys(userTranslate).forEach(function(key){
+            if(translate[key]){
+                translate[key] = userTranslate[key];
+            }
+        });
+    }
+
+    EasyVoice.startListening = () => {
+        $timeout(()=>{
+            if(tryAgainInterval != undefined){
+                $timeout.cancel(tryAgainInterval);
+                tryAgainInterval = undefined;
+            }
+            labelText.innerHTML = translate.speakNow;
+            listening = true;
+            if(body.querySelector('#angular-easy-voice-container') != null){
+                voiceContainer.style.display="none";
+            }
+            voiceContainer.onclick = () => {
+                EasyVoice.stopListening();
+                return;
+            }
+            intervalListening = $timeout(()=>{
+                labelText.innerHTML = translate.listening;
+            }, 3000);
+            if(EasyVoice.onstart && typeof EasyVoice.onstart == 'function'){
+                EasyVoice.onstart();
+            }
+            voiceContainer.style.display="block";
+        });
     }
 
     EasyVoice.stopListening = () => {
@@ -218,7 +305,7 @@ export default function EasyVoice($window, $timeout){
         return AudioStream == undefined ? false: true;
     }
 
-    EasyVoice.initWatch = (keyword, configurations, callback) => {
+    EasyVoice.initWatch = (keyword, configurations, initListening) => {
         if (!('webkitSpeechRecognition' in $window)) {
            throw "Sorry, this feature is only for Google Chrome.";
         }
@@ -230,8 +317,8 @@ export default function EasyVoice($window, $timeout){
         }
         userConfiguration = configurations;
         userKeyword = keyword;
-        userCallback = callback;
-        this.initRecognition();
+        // userCallback = callback;
+        this.initRecognition(initListening);
     }
 
     EasyVoice.reproduce = (str, lang) => {
@@ -318,7 +405,11 @@ export default function EasyVoice($window, $timeout){
             }
             magnitude = magnitude / multiplier;
             if(i == 4){
-                buttonMicrophone.style.boxShadow = '0px 0px 13px '+Math.round(magnitude-5)+'px #ddd';
+                if(listening){
+                    buttonMicrophone.style.boxShadow = '0px 0px 13px '+Math.round(magnitude-5)+'px #ddd';
+                }else{
+                    buttonMicrophone.style.boxShadow = '0px 0px 13px 0px #ddd';
+                }
             }
         }
 
@@ -338,7 +429,7 @@ export default function EasyVoice($window, $timeout){
         this.updateAnalysers();
     }
 
-    this.initRecognition = () => {
+    this.initRecognition = (initListening) => {
         if(userConfiguration){
             angular.extend(recognition, userConfiguration);
         }
@@ -364,6 +455,10 @@ export default function EasyVoice($window, $timeout){
 
       if(EasyVoice.oninit && typeof EasyVoice.oninit == 'function'){
           EasyVoice.oninit();
+      }
+
+      if(initListening){
+          EasyVoice.startListening();
       }
 
     }

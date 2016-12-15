@@ -24,16 +24,29 @@
             .controller('Ctrl', function($scope, EasyVoice){
 
               EasyVoice.onresult = function(text){
-                  console.log(text)
+                  console.log('ops');
               }
+
+              EasyVoice.addCommand('boa tarde', function(){
+                  console.log('ops')
+              })
 
               EasyVoice.addWord(["Gumga", "Papadi"]);
 
-              EasyVoice.initWatch('Ok Google', {
-                  lang: 'pt-BR'
-              }, function(resp){
-                  // console.log(resp);
+              EasyVoice.setTranslate({
+                  speakNow: 'Fale agora',
+                  notUnderstand : 'Não entendi.',
+                  tryAgain : 'Tente novamente.',
+                  checkMicrophone: 'Verifique seu microphone.',
+                  listening: 'Ouvindo...'
               });
+
+              $scope.init = function(){
+                  EasyVoice.initWatch('Beleza Gumga', {
+                      lang: 'pt-BR',
+                      debug: true
+                  }, false);
+              }
 
               $scope.stop = function(){
                   EasyVoice.stopWatch();

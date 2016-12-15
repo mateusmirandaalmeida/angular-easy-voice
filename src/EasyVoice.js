@@ -3,6 +3,7 @@ export default function EasyVoice($window, $timeout){
     const EasyVoice = {
         oninit: undefined,
         onstart: undefined,
+        onuserphrase: undefined,
         onresult: undefined
     };
     let recognition = undefined,
@@ -169,7 +170,7 @@ export default function EasyVoice($window, $timeout){
                             EasyVoice.onstart();
                         }
                         voiceContainer.style.display="block";
-                    });                    
+                    });
                 }
                 if(listening && event.results[i].isFinal){
                     commands.forEach(command => {
@@ -182,9 +183,15 @@ export default function EasyVoice($window, $timeout){
                         }
                     });
                 }
+
                 if(EasyVoice.onresult && typeof EasyVoice.onresult == 'function' && listening && event.results[i].isFinal && transcript != userKeyword){
                     EasyVoice.onresult(transcript);
                 }
+
+                if(EasyVoice.onuserphrase && typeof EasyVoice.onuserphrase == 'function' && event.results[i].isFinal && transcript != userKeyword){
+                    EasyVoice.onresult(transcript);
+                }
+
             }
         }
 

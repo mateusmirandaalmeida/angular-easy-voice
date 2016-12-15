@@ -27,9 +27,7 @@ angular.module('myApp', ['angular-easy-voice'])
 EasyVoice.initWatch('Ok Google', {
     lang: 'pt-BR', // language is optional, default: 'en-US'
     debug: false // Shows the user's speech
-}, function(resp){
-    console.log(resp);
-});
+}, false); // true or false to come active
 ```
 ## Stop
 ```
@@ -58,6 +56,16 @@ EasyVoice.addCommandStartingWith('Search people', function(text){
 #Add words
 ```
   EasyVoice.addWord("Gumga");  // or ["Gumga", "Other"]
+```
+#Translate
+```
+EasyVoice.setTranslate({
+    speakNow: 'Speak Now',
+    notUnderstand : 'Not understand.',
+    tryAgain : 'Try again.',
+    checkMicrophone: 'Please, check your microphone.',
+    listening: 'listening...'
+});
 ```
 ## Installation of dependencies for use or development
 ```

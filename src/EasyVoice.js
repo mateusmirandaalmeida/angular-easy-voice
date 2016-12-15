@@ -189,7 +189,7 @@ export default function EasyVoice($window, $timeout){
                 }
 
                 if(EasyVoice.onuserphrase && typeof EasyVoice.onuserphrase == 'function' && event.results[i].isFinal && transcript != userKeyword){
-                    EasyVoice.onresult(transcript);
+                    EasyVoice.onuserphrase(transcript);
                 }
 
             }

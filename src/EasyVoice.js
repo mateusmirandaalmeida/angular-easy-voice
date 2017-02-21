@@ -6,8 +6,14 @@ export default function EasyVoice($window, $timeout){
         onuserphrase: undefined,
         onresult: undefined
     };
+
+    let audioContext;
+
+    if('AudioContext' in $window){
+      audioContext = new AudioContext();
+    }
+
     let recognition = undefined,
-        audioContext = new AudioContext(),
         inputPoint,
         realAudioInput,
         audioInput,
@@ -314,6 +320,9 @@ export default function EasyVoice($window, $timeout){
         }
         if(userKeyword){
           throw "Sorry, start only once.";
+        }
+        if(!('AudioContext' in $window)){
+          throw "Sorry, not AudioContext.";
         }
         userConfiguration = configurations;
         userKeyword = keyword;

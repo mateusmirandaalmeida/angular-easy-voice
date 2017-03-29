@@ -240,7 +240,7 @@ export default function EasyVoice($window, $timeout){
         }
 
         recognition.onerror = (error) => {
-            if(error.error == 'aborted'){
+            if(error.error == 'aborted' || error.error == 'not-allowed'){
               autoClose = false;
               EasyVoice.stopWatch();
               voiceContainer.onclick = () => {

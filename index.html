@@ -10,7 +10,7 @@
 
       <div ng-clock>
 
-          <h1>Example Angular Easy Voice.</h1>
+          <h1>Exemplo Angular Easy Voice, diga : "Ok google" depois "boa tarde".</h1>
 
           <button ng-click="init()">Começar</button>
           <button ng-click="stop()">Parar</button>
@@ -24,11 +24,11 @@
             .controller('Ctrl', function($scope, EasyVoice){
 
               EasyVoice.onresult = function(text){
-                  console.log('ops');
+                  console.log('saida: ', text);
               }
 
               EasyVoice.addCommand('boa tarde', function(){
-                  console.log('ops')
+                  EasyVoice.reproduce('Boa tarde, o dia está lindo hoje', 'pt-BR');
               })
 
               EasyVoice.addWord(["Gumga", "Papadi"]);
@@ -50,7 +50,6 @@
 
               $scope.stop = function(){
                   EasyVoice.stopWatch();
-                  console.log(EasyVoice.isRunning())
               }
 
             });
